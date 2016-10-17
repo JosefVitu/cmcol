@@ -4,7 +4,7 @@ cmcol is a small command-line program for creating a XML file containing basic i
 
 ## Prerequisites
 
-* glibc 2.1 or newer
+* glibc (or compatible)
 * g++ or clang++
 * LibTag
 * libxml2
