@@ -25,7 +25,8 @@
 #include <taglib/id3v2tag.h>
 #include <taglib/xiphcomment.h>
 
-#include <argp.h>
+#include <boost/program_options.hpp>
+
 #include <ftw.h>
 
 #include <cstdio>
@@ -38,58 +39,12 @@
 #if defined(LIBXML_WRITER_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
 #define MY_ENCODING "UTF-8"
 
-// ARGP START
-const char* argp_program_version = "cmcol 1.0";
-const char* argp_program_bug_address = "josef@vitu.org";
-static char doc[] = "cmcol -- a music collection file creator";
-static char args_doc[] = "INPUT_DIR";
-
-static struct argp_option options[] = {
-  {"output", 'o', "FILE", OPTION_ARG_OPTIONAL,
-    "Output to FILE instead of standard output", 0},
-  {0, 0, 0, 0, 0, 0}
-};
-
-struct arguments {
-  char* args[1];
-  char* output_file;
-};
-
-arguments args;
-// ARGP END
-
 // XML START
 xmlTextWriterPtr writer = NULL;
 // XML END
 
+std::string input_dir(".");
 std::vector<std::string> files;
-
-// Parse a single option
-static error_t parse_opt(int key, char* arg, struct argp_state* state) {
-  arguments* arguments = static_cast<struct arguments*>(state->input);
-
-  switch (key) {
-    case 'o':
-      arguments->output_file = arg;
-      break;
-    case ARGP_KEY_ARG:
-      if (state->arg_num >= 1)
-        argp_usage(state);
-      arguments->args[state->arg_num] = arg;
-      break;
-    case ARGP_KEY_END:
-      if (state->arg_num < 1)
-        argp_usage(state);
-      break;
-    default:
-      return ARGP_ERR_UNKNOWN;
-  }
-
-  return 0;
-}
-
-static struct argp argp = {options, parse_opt, args_doc, doc,
-                           0, 0, 0};
 
 void writeElement(const char* name, const TagLib::String& value) {
   if (!value.isEmpty()) {
@@ -101,9 +56,8 @@ void writeElement(const char* name, const TagLib::String& value) {
 void try_parse(const std::string& name) {
   TagLib::FileRef f(name.c_str(), false);
   if (!f.isNull()) {
-    const std::string prefix(args.args[0]);
     std::string short_name(name);
-    short_name.erase(0, prefix.size());
+    short_name.erase(0, input_dir.size());
 
     xmlTextWriterStartElement(writer, BAD_CAST "file");
 
@@ -197,14 +151,56 @@ int parse_and_write(const char* input_dir, const char* output_file) {
 }
 
 int main(int argc, char** argv) {
-  int ret;
-  args.output_file = const_cast<char*>("-");  // Deafult value
+  // Program options
+  namespace po = boost::program_options;
+  std::string output_file("-"); // Defaults to standard output
+  po::options_description desc("Options");
+  desc.add_options()
+    ("input,i", po::value<std::string>(),
+     "Input directory (current directory if not specified)")
+    ("output,o", po::value<std::string>(),
+     "Output file (standard output if not specified)")
+    ("help,?", "Print this help message")
+    ("version,V", "Print program version");
 
-  argp_parse(&argp, argc, argv, 0, 0, &args);
+  po::positional_options_description pd;
+  pd.add("input", -1);
+
+  try {
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv).
+              options(desc).positional(pd).run(), vm);
+    po::notify(vm);
+
+    if (vm.empty() || vm.count("help")) {
+      std::cout << "cmcol -- a music collection file creator\n\n"
+        << desc
+        << "\nReport bugs here: https://github.com/JosefVitu/cmcol/issues"
+        << std::endl;
+      return 0;
+    }
+
+    if (vm.count("version")) {
+      std::cout << "cmcol 1.1.0" << std::endl;
+      return 0;
+    }
+
+    if (vm.count("input")) {
+      input_dir = vm["input"].as<std::string>();
+    }
+
+    if (vm.count("output")) {
+      output_file = vm["output"].as<std::string>();
+    }
+  }
+  catch (std::exception& e) {
+    std::cerr << "Error: " << e.what() << std::endl;
+    return 2;
+  }
 
   LIBXML_TEST_VERSION
 
-  ret = parse_and_write(args.args[0], args.output_file);
+  const int ret = parse_and_write(input_dir.c_str(), output_file.c_str());
 
   xmlCleanupParser();
   return ret;

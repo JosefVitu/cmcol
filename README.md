@@ -7,6 +7,7 @@ cmcol is a small command-line program for creating a XML file containing basic i
 * cmake
 * glibc (or compatible)
 * g++ or clang++
+* Boost.Program\_options
 * LibTag
 * libxml2
 
@@ -42,12 +43,10 @@ sudo make uninstall
 ## Usage
 
 ```
-cmcol [OPTION...] INPUT_DIR
-
-  -o, --output[=FILE]       Output to FILE instead of standard output
-  -?, --help                Give this help list
-  --usage                   Give a short usage message
-  -V, --version             Print program version
+  -i [ --input ] arg    Input directory (current directory if not specified)
+  -o [ --output ] arg   Output file (standard output if not specified)
+  -? [ --help ]         Print this help message
+  -V [ --version ]      Print program version
 ```
 
 ## Authors

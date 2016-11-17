@@ -17,6 +17,13 @@ if (TAGLIB_FOUND)
     include_directories(${TAGLIB_INCLUDE_DIRS})
 endif (TAGLIB_FOUND)
 
+find_package(Boost 1.59 REQUIRED COMPONENTS program_options)
+
+if (Boost_FOUND)
+    link_libraries (${Boost_LIBRARIES})
+    include_directories(${Boost_INCLUDE_DIRS})
+endif (Boost_FOUND)
+
 if (NOT CMAKE_BUILD_TYPE)
        set (CMAKE_BUILD_TYPE Release)
 endif ()
