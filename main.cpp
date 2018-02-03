@@ -45,6 +45,7 @@ xmlTextWriterPtr writer = NULL;
 
 std::string input_dir(".");
 std::vector<std::string> files;
+bool verbose = false;
 
 void writeElement(const char* name, const TagLib::String& value) {
   if (!value.isEmpty()) {
@@ -160,6 +161,7 @@ int main(int argc, char** argv) {
      "Input directory (current directory if not specified)")
     ("output,o", po::value<std::string>(),
      "Output file (standard output if not specified)")
+    ("verbose,v", "Increase verbosity (prints to standard output)")
     ("help,?", "Print this help message")
     ("version,V", "Print program version");
 
@@ -181,12 +183,28 @@ int main(int argc, char** argv) {
     }
 
     if (vm.count("version")) {
-      std::cout << "cmcol 1.1.0" << std::endl;
+      std::cout << "cmcol 1.2.0" << std::endl;
       return 0;
+    }
+
+    if (vm.count("verbose")) {
+      verbose = true;
     }
 
     if (vm.count("input")) {
       input_dir = vm["input"].as<std::string>();
+    }
+
+    char* actual_path = realpath(input_dir.c_str(), NULL);
+
+    if (actual_path) {
+      if (verbose) {
+        std::cout << "Input: " << actual_path << std::endl;
+      }
+
+      free(actual_path);
+    } else {
+      throw std::invalid_argument("Input directory not found.");
     }
 
     if (vm.count("output")) {

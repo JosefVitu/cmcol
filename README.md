@@ -45,6 +45,7 @@ sudo make uninstall
 ```
   -i [ --input ] arg    Input directory (current directory if not specified)
   -o [ --output ] arg   Output file (standard output if not specified)
+  -v [ --verbose ]      Increase verbosity (prints to standard output)
   -? [ --help ]         Print this help message
   -V [ --version ]      Print program version
 ```
